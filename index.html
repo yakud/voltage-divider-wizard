@@ -13,7 +13,7 @@
             margin: 0 auto;
             padding: 20px;
         }
-        form {
+        form, table {
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -26,25 +26,57 @@
         #result {
             white-space: pre-wrap;
         }
+        table {
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
     </style>
 </head>
 <body>
 <h1>Voltage Divider Calculator</h1>
+
+<h2>Available Resistors</h2>
+<table id="resistor-table">
+    <thead>
+    <tr>
+        <th>Value (Ω)</th>
+        <th>Name</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody id="resistor-list">
+    <!-- Resistors will be added here dynamically -->
+    </tbody>
+</table>
+
+<form id="add-resistor-form">
+    <input type="number" id="resistor-value" placeholder="Resistor Value (Ω)" required>
+    <input type="text" id="resistor-name" placeholder="Resistor Name (e.g., 1kΩ)" required>
+    <button type="submit">Add Resistor</button>
+</form>
+
+<h2>Voltage Divider Calculation</h2>
 <form id="calculator-form">
     <label for="input-voltage">Input Voltage (V):</label>
-    <input type="number" id="input-voltage" required step="0.1">
+    <input type="number" id="input-voltage" required step="0.01">
 
     <label for="output-voltage">Desired Output Voltage (V):</label>
-    <input type="number" id="output-voltage" required step="0.1">
+    <input type="number" id="output-voltage" required step="0.01">
 
     <label for="max-resistors">Max Resistors Count:</label>
-    <input type="number" id="max-resistors" required min="1" max="3">
+    <input type="number" id="max-resistors" required min="1" max="5">
 
     <button type="submit">Calculate</button>
 </form>
+
 <div id="result"></div>
-<div id="gnd-network"></div>
-<div id="vcc-network"></div>
 
 <script type="module">
     import { calculateVoltageDivider } from './dist/resistor-calculator.js';
@@ -52,13 +84,94 @@
     // Initialize mermaid
     mermaid.initialize({ startOnLoad: false });
 
+    let resistorsInOhms = [
+        { value: 240, name: "240Ω" },
+        { value: 470, name: "470Ω" },
+        { value: 510, name: "510Ω" },
+        { value: 1200, name: "1.2kΩ" },
+        { value: 100000, name: "100kΩ" },
+        { value: 10000, name: "10kΩ" },
+        { value: 1000, name: "1kΩ" },
+        { value: 2200, name: "2.2kΩ" },
+        { value: 200000, name: "200kΩ" },
+        { value: 20000, name: "20kΩ" },
+        { value: 220000, name: "220kΩ" },
+        { value: 22000, name: "22kΩ" },
+        { value: 27000, name: "27kΩ" },
+        { value: 30000, name: "30kΩ" },
+        { value: 3000, name: "3kΩ" },
+        { value: 4700, name: "4.7kΩ" },
+        { value: 470000, name: "470kΩ" },
+        { value: 47000, name: "47kΩ" },
+        { value: 510000, name: "510kΩ" },
+        { value: 71000, name: "71kΩ" },
+        { value: 97000, name: "97kΩ" },
+    ];
+
+    function saveToLocalStorage() {
+        localStorage.setItem('resistorsInOhms', JSON.stringify(resistorsInOhms));
+        localStorage.setItem('inputVoltage', document.getElementById('input-voltage').value);
+        localStorage.setItem('outputVoltage', document.getElementById('output-voltage').value);
+        localStorage.setItem('maxResistors', document.getElementById('max-resistors').value);
+    }
+
+    function loadFromLocalStorage() {
+        const savedResistors = localStorage.getItem('resistorsInOhms');
+        if (savedResistors) {
+            resistorsInOhms = JSON.parse(savedResistors);
+        }
+
+        document.getElementById('input-voltage').value = localStorage.getItem('inputVoltage') || '';
+        document.getElementById('output-voltage').value = localStorage.getItem('outputVoltage') || '';
+        document.getElementById('max-resistors').value = localStorage.getItem('maxResistors') || '';
+    }
+
+    function updateResistorList() {
+        const resistorList = document.getElementById('resistor-list');
+        resistorList.innerHTML = '';
+        resistorsInOhms.forEach((resistor, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${resistor.value}</td>
+                <td>${resistor.name}</td>
+                <td><button class="remove-resistor" data-index="${index}">Remove</button></td>
+            `;
+            resistorList.appendChild(row);
+        });
+        saveToLocalStorage();
+    }
+
+    function removeResistor(index) {
+        resistorsInOhms.splice(index, 1);
+        updateResistorList();
+    }
+
+    document.getElementById('resistor-list').addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-resistor')) {
+            const index = parseInt(e.target.getAttribute('data-index'));
+            removeResistor(index);
+        }
+    });
+
+    document.getElementById('add-resistor-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const value = parseInt(document.getElementById('resistor-value').value);
+        const name = document.getElementById('resistor-name').value;
+        resistorsInOhms.push({value, name});
+        updateResistorList();
+        e.target.reset();
+    });
+
     document.getElementById('calculator-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const inputVoltage = parseFloat(document.getElementById('input-voltage').value);
         const outputVoltage = parseFloat(document.getElementById('output-voltage').value);
         const maxResistors = parseInt(document.getElementById('max-resistors').value);
 
-        const result = calculateVoltageDivider(inputVoltage, outputVoltage, maxResistors);
+        saveToLocalStorage();
+
+        console.log('Input Voltage:', resistorsInOhms);
+        const result = calculateVoltageDivider(inputVoltage, outputVoltage, maxResistors, resistorsInOhms);
 
         const resultHtml = `
 ## Results
@@ -84,6 +197,16 @@ ${result.vccNetwork}
 
         return false;
     });
+
+    // Load saved data and update the resistor list on page load
+    loadFromLocalStorage();
+    updateResistorList();
+
+    // Add event listeners to save input values when they change
+    ['input-voltage', 'output-voltage', 'max-resistors'].forEach(id => {
+        document.getElementById(id).addEventListener('change', saveToLocalStorage);
+    });
 </script>
+
 </body>
 </html>
