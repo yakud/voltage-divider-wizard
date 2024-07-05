@@ -114,9 +114,9 @@ function generateAllResistorCombinations(resistors, maxCount) {
     const combinations = generateCombinations(resistorValues, maxCount);
     const allCombinations = [];
     for (const combo of combinations) {
-        // Добавляем последовательное соединение
+        // Add series connection
         allCombinations.push(new ResistorNetwork(combo.map(r => new Resistor(r, `R${r}`)), false));
-        // Добавляем параллельное соединение, если больше одного резистора
+        // Add parallel connection
         if (combo.length > 1) {
             allCombinations.push(new ResistorNetwork(combo.map(r => new Resistor(r, `R${r}`)), true));
         }
@@ -147,32 +147,9 @@ function findBestVoltageDivider(inputVoltage, outputVoltage, maxResistorsCount, 
         vccNetwork: bestCombination[1]
     };
 }
-// Пример использования
-const resistorsInOhms = [
-    { value: 240, name: "240Ω" },
-    { value: 470, name: "470Ω" },
-    { value: 510, name: "510Ω" },
-    { value: 1200, name: "1.2kΩ" },
-    { value: 100000, name: "100kΩ" },
-    { value: 10000, name: "10kΩ" },
-    { value: 1000, name: "1kΩ" },
-    { value: 2200, name: "2.2kΩ" },
-    { value: 200000, name: "200kΩ" },
-    { value: 20000, name: "20kΩ" },
-    { value: 220000, name: "220kΩ" },
-    { value: 22000, name: "22kΩ" },
-    { value: 27000, name: "27kΩ" },
-    { value: 30000, name: "30kΩ" },
-    { value: 3000, name: "3kΩ" },
-    { value: 4700, name: "4.7kΩ" },
-    { value: 470000, name: "470kΩ" },
-    { value: 47000, name: "47kΩ" },
-    { value: 510000, name: "510kΩ" },
-    { value: 71000, name: "71kΩ" },
-    { value: 97000, name: "97kΩ" },
-];
-export function calculateVoltageDivider(inputVoltage, outputVoltage, maxResistorsCount) {
-    const result = findBestVoltageDivider(inputVoltage, outputVoltage, maxResistorsCount, resistorsInOhms);
+export function calculateVoltageDivider(inputVoltage, outputVoltage, maxResistorsCount, resistors) {
+    console.log("Resistor Calculator, resistors: ", resistors);
+    const result = findBestVoltageDivider(inputVoltage, outputVoltage, maxResistorsCount, resistors);
     const r1 = result.gndNetwork.getTotalResistance();
     const r2 = result.vccNetwork.getTotalResistance();
     const actualOutputVoltage = inputVoltage * r2 / (r1 + r2);
